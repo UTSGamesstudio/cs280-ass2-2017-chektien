@@ -1,4 +1,4 @@
-SOURCES = driver.cpp ObjectAllocator.cpp PRNG.cpp
+SOURCES = driver-sample.cpp BList.h PRNG.cpp
 FLAGS = -std=c++14 -Wall
 LDIRS =
 IDIRS =
