@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <string>     // error strings
 #include <stdexcept>  // std::exception
+#include "ObjectAllocator.h"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4290 ) // suppress warning: C++ Exception Specification ignored
@@ -94,6 +95,12 @@ class BList
     BNode *tail_; // points to the last node
 
     // Other private methods you may need
+    ObjectAllocator oa_{nodesize(), OAConfig(true)};
+    BListStats stats_;
+    void inc_count(BNode* p_node);
+    void split_node(BNode* p_node, T value, unsigned insertion_index);
+    BNode* get_node(const int& index) const;
+    void delete_node(BNode* p_node);
 };
 
 #include "BList.cpp"

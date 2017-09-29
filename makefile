@@ -1,15 +1,15 @@
-SOURCES = driver-sample.cpp BList.h PRNG.cpp
+SOURCES = ObjectAllocator.cpp driver-sample.cpp PRNG.cpp
 FLAGS = -std=c++14 -Wall
-LDIRS =
-IDIRS =
-LIBS =
+
+compile:
+	g++ -o out $(SOURCES) $(FLAGS)
 
 clean:
 	rm *-app *.o *.obj out
 
 1:
 	g++ -o out $(SOURCES) $(FLAGS)
-	./out 1
+	./out 21 
 
 8:
 	g++ -o out $(SOURCES) $(FLAGS)
@@ -19,9 +19,9 @@ clean:
 	g++ -o out $(SOURCES) $(FLAGS)
 	./out 22 > output.txt
 
-all:
+run:
 	g++ -o out $(SOURCES) $(FLAGS)
-	./out
+	./out > output.txt
 
 debug:
 	g++ -o out -g $(SOURCES) $(FLAGS)
