@@ -9,7 +9,8 @@
         - so much stats duplicity, e.g., Size/stats_.ArraySize
 */
 /******************************************************************************/
-#define DEBUG_
+//#define DEBUG
+//#define DEBUG_SUBSCRIPT
 #define SYNTACTIC
 
 #include <iostream>
@@ -227,7 +228,7 @@ void BList<T, Size>::split_node(BNode* p_node, T value, unsigned insertion_index
     }
     p_node->next = p_newnode;
 
-    // insert value to left node if single value node 
+    // single value node 
     if (Size == 1) {
         // if insertion index is < Size then insert left
         if (insertion_index == 0) {
@@ -296,12 +297,12 @@ void BList<T, Size>::split_node(BNode* p_node, T value, unsigned insertion_index
     std::cout << "insert " << value  << ": i=" << insertion_index <<  " no slots left, splitted left<" << p_node << "> vals=";
     for (auto i=0u; i<Size; ++i)
         std::cout << " " << p_node->values[i];
-    std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
+    std::cout << " prev=" << p_node->prev << " next=" << p_node->next << " count=" << p_node->count << std::endl; 
 
     std::cout << "insert " << value << ": i=" << insertion_index << " no slots left, splitted right<" << p_newnode << "> vals=";
     for (auto i=0u; i<Size; ++i)
         std::cout << " " << p_newnode->values[i];
-    std::cout << " prev=" << p_newnode->prev << " next=" << p_newnode->next << std::endl; 
+    std::cout << " prev=" << p_newnode->prev << " next=" << p_newnode->next << " count=" << p_newnode->count << std::endl; 
 #endif
 }
 
@@ -338,72 +339,60 @@ void BList<T, Size>::insert(const T& value) throw(BListException) {
 #endif
 
             // if this the first elem of node
-           /* if (i == 0)  {*/
-
-            //}
-            //else {
-
-           /* }*/
-
-            // if there are slots left in curr node, just insert
-            if (p_node->count < Size) {
-                // shift all elems 1 slot to the right from i in curr node
-                auto j = p_node->count;
-                while (j>i) {
-                    p_node->values[j] = p_node->values[j-1];
-                    --j;
-                }
-                
-                // insert value at i
-                p_node->values[i] = value;
-                inc_count(p_node);
-                ++stats_.ItemCount;
+            if (i == 0)  {
+                // if slots left in prev node, append to prev
+                if (p_node->prev && p_node->prev->count < Size) {
+                    p_node->prev->values[p_node->prev->count] = value;
+                    inc_count(p_node->prev);
+                    ++stats_.ItemCount;
 
 #ifdef DEBUG
-                std::cout << "insert " << value << ": slots avail in curr node, inserted at i=" << i << " and shifted p_node<" << p_node << "> vals=";
-                for (auto i=0u; i<Size; ++i)
-                    std::cout << " " << p_node->values[i];
-                std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
+                    std::cout << "insert " << value << ": not head, i=0, slots avail in prev node, appended to prev node<" << p_node->prev << "> vals=";
+                    for (auto i=0u; i<Size; ++i)
+                        std::cout << " " << p_node->prev->values[i];
+                    std::cout << " prev=" << p_node->prev->prev << " next=" << p_node->prev->next << std::endl; 
 #endif
-            }
-
-            // if not head 
-            else if (p_node->prev) {
-                // i at 1st elem of curr node
-                if (i == 0) {
-                    // if slots left in prev node, append to prev
-                    if (p_node->prev->count < Size) {
-                        p_node->prev->values[p_node->prev->count] = value;
-                        inc_count(p_node->prev);
-                        ++stats_.ItemCount;
-
-#ifdef DEBUG
-                        std::cout << "insert " << value << ": not head, i pointing to 1st of curr node, slots avail in prev node, appended to prev node<" << p_node->prev << "> vals=";
-                        for (auto i=0u; i<Size; ++i)
-                            std::cout << " " << p_node->prev->values[i];
-                        std::cout << " prev=" << p_node->prev->prev << " next=" << p_node->prev->next << std::endl; 
-#endif
-                    }
-
-                    // no slots in prev node, split prev node
-                    else {
-
-#ifdef DEBUG
-                        std::cout << "insert " << value << ": not head, i pointing to 1st of curr node, no slots in prev node, splitting prev node<" << p_node->prev << "> vals=";
-                        for (auto i=0u; i<Size; ++i)
-                            std::cout << " " << p_node->prev->values[i];
-                        std::cout << " prev=" << p_node->prev->prev << " next=" << p_node->prev->next << std::endl; 
-#endif
-                        
-                        split_node(p_node->prev, value, Size);
-                    }
                 }
 
-                // i in the middle of curr node
+                // if slots in curr node, pre-pend to current
+                else if (p_node->count < Size) {
+                    // shift all elems 1 slot to the right from i in curr node
+                    auto j = p_node->count;
+                    while (j>i) {
+                        p_node->values[j] = p_node->values[j-1];
+                        --j;
+                    }
+
+                    // insert value at i
+                    p_node->values[i] = value;
+                    inc_count(p_node);
+                    ++stats_.ItemCount;
+
+#ifdef DEBUG
+                    std::cout << "insert " << value << ": i=0, slots avail in curr node, pre-pended in curr node p_node<" << p_node << "> vals=";
+                    for (auto i=0u; i<Size; ++i)
+                        std::cout << " " << p_node->values[i];
+                    std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
+#endif
+                }
+
+                // no slots in prev node, split and add to prev node
+                else if (p_node->prev) {
+#ifdef DEBUG
+                    std::cout << "insert " << value << ": not head, i pointing to 1st of curr node, no slots in prev node, splitting prev node<" << p_node->prev << "> vals=";
+                    for (auto i=0u; i<Size; ++i)
+                        std::cout << " " << p_node->prev->values[i];
+                    std::cout << " prev=" << p_node->prev->prev << " next=" << p_node->prev->next << std::endl; 
+#endif
+
+                    split_node(p_node->prev, value, Size);
+                } 
+
+                // is head and no space, split head
                 else {
 
 #ifdef DEBUG
-                    std::cout << "insert " << value << ": not head, i in midst of curr node, no slots in curr node, splitting curr node<" << p_node << "> vals=";
+                    std::cout << "insert " << value << ": is head, i pointing to 1st of curr node, no slots in prev node, splitting curr node<" << p_node << "> vals=";
                     for (auto i=0u; i<Size; ++i)
                         std::cout << " " << p_node->values[i];
                     std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
@@ -413,27 +402,53 @@ void BList<T, Size>::insert(const T& value) throw(BListException) {
                 }
             }
 
-            // if head, and no slots in the node, split curr node
+            // i in middle of curr node
             else {
+                // if there is space in curr node, shift and insert 
+                if (p_node->count < Size) {
+                    // shift all elems 1 slot to the right from i in curr node
+                    auto j = p_node->count;
+                    while (j>i) {
+                        p_node->values[j] = p_node->values[j-1];
+                        --j;
+                    }
+
+                    // insert value at i
+                    p_node->values[i] = value;
+                    inc_count(p_node);
+                    ++stats_.ItemCount;
 
 #ifdef DEBUG
-                std::cout << "insert " << value << ": is head, no slots in curr node, splitting curr node<" << p_node << "> vals=";
-                for (auto i=0u; i<Size; ++i)
-                    std::cout << " " << p_node->values[i];
-                std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
+                    std::cout << "insert " << value << ": i=" << i << ", slots avail in curr node, pre-pended in curr node p_node<" << p_node << "> vals=";
+                    for (auto i=0u; i<Size; ++i)
+                        std::cout << " " << p_node->values[i];
+                    std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
 #endif
 
-                split_node(p_node, value, i);
-            }
+                }
 
+                // no space in curr node, split node and add
+                else {
+#ifdef DEBUG
+                    std::cout << "insert " << value << ": i in midst of curr node, no slots in curr node, splitting curr node<" << p_node << "> vals=";
+                    for (auto i=0u; i<Size; ++i)
+                        std::cout << " " << p_node->values[i];
+                    std::cout << " prev=" << p_node->prev << " next=" << p_node->next << std::endl; 
+#endif
+
+                    split_node(p_node, value, i);
+                }
+            }
         }
-        
+
         // else reached end of list and add new node at the end
         else {
             // if there are slots left in tail, append to last pos 
             if (tail_->count < Size) {
                 tail_->values[tail_->count] = value;
                 inc_count(tail_);
+                ++stats_.ItemCount;
+
 #ifdef DEBUG
                 std::cout << "insert " << value << ": reached end of list, has slots in tail, appended to tail<" << tail_ << "> with vals=";
                 for (auto i=0u; i<Size; ++i)
@@ -442,30 +457,26 @@ void BList<T, Size>::insert(const T& value) throw(BListException) {
 #endif
             }
             
-            // no slots in tail, create new node and link it up properly
+            // no slots in tail, split tail and insert 
             else {
-                BNode* p_newnode = new (oa_.Allocate()) BNode();
-                p_newnode->prev = tail_;
-                p_newnode->next = nullptr;
-                tail_->next = p_newnode;
+                split_node(tail_, value, tail_->count);
+                //BNode* p_newnode = new (oa_.Allocate()) BNode();
+                //p_newnode->prev = tail_;
+                //p_newnode->next = nullptr;
+                //tail_->next = p_newnode;
 
-                // insert value in new node
-                p_newnode->values[0] = value;
-                inc_count(p_newnode);
+                //// insert value in new node
+                //p_newnode->values[0] = value;
+                //inc_count(p_newnode);
 
-#ifdef DEBUG
-                std::cout << "insert " << value << ": reached end of list, no slots in tail, added newnode<" << p_newnode << "> with vals=";
-                for (auto i=0u; i<Size; ++i)
-                    std::cout << " " << p_newnode->values[i];
-                std::cout << " prev=" << p_newnode->prev << " next=" << p_newnode->next << std::endl; 
-#endif
-                
-                // shift tail pointer
-                tail_ = p_newnode;
+//#ifdef DEBUG
+                //std::cout << "insert " << value << ": reached end of list, no slots in tail, added newnode<" << p_newnode << "> with vals=";
+                //for (auto i=0u; i<Size; ++i)
+                    //std::cout << " " << p_newnode->values[i];
+                //std::cout << " prev=" << p_newnode->prev << " next=" << p_newnode->next << std::endl; 
+//#endif
 
-                ++stats_.NodeCount;
             }
-            ++stats_.ItemCount;
         }
     }
     
@@ -635,47 +646,84 @@ int BList<T, Size>::find(const T& value) const {
 template <typename T, unsigned Size>
 T& BList<T, Size>::operator[](int index) throw(BListException) {
 #ifdef DEBUG_SUBSCRIPT
-    std::cout << "operator[]: index=" << index << std::endl;
+    std::cout << "\noperator[]: index=" << index << std::endl;
 #endif
-    
-    // get node
-    auto p_node = get_node(index);
-    
-    // get local index into node
-    auto i = index % Size;
-
-    // return value
-    return p_node->values[i];
+    return get_value(index);    
 }
 
 template <typename T, unsigned Size>
 const T& BList<T, Size>::operator[](int index) const throw(BListException) {
 #ifdef DEBUG_SUBSCRIPT
-    std::cout << "const operator[]: index=" << index << std::endl;
+    std::cout << "\nconst operator[]: index=" << index << std::endl;
 #endif
-
-    // get node
-    auto p_node = get_node(index);
-    
-    // get local index into node
-    auto i = index % Size;
-
-    // return value
-    return p_node->values[i];
+    return get_value(index);
 }
 
 template <typename T, unsigned Size>
-typename BList<T, Size>::BNode* BList<T, Size>::get_node(const int& index) const {
+T& BList<T, Size>::get_value(const int& index) const {
+#ifdef DEBUG_SUBSCRIPT
+    std::cout << "get_value: index=" << index << std::endl;
+#endif
+    
     // use the counts to jump
     auto sum = 0;
     auto p_node = head_;
+    auto i = index;
+    auto prev_i = i;
     while (sum <= index) {
+
+#ifdef DEBUG_SUBSCRIPT
+        std::cout << "get_value: looping1 sum=" << sum << " prev_i=" << prev_i << " i=" << i << "count=" << p_node->count << std::endl;
+#endif
+
         sum += p_node->count;
+        prev_i = i;
+        i -= p_node->count;
+
+#ifdef DEBUG_SUBSCRIPT
+        std::cout << "get_value: looping2 sum=" << sum << "prev_i=" << prev_i << " i=" << i << " count=" << p_node->count << std::endl;
+#endif
+
         p_node = p_node->next;
     }
 
     // handle tail node
-    if (p_node)
+    if (p_node == head_)
+        return p_node->values[prev_i];
+    else if (p_node)
+        return p_node->prev->values[prev_i];
+    else
+        return tail_->values[prev_i];
+}
+
+template <typename T, unsigned Size>
+typename BList<T, Size>::BNode* BList<T, Size>::get_node(const int& index) const {
+#ifdef DEBUG_SUBSCRIPT
+    std::cout << "get_node: index=" << index << std::endl;
+#endif
+    
+    // use the counts to jump
+    auto sum = 0;
+    auto p_node = head_;
+    while (sum <= index) {
+
+#ifdef DEBUG_SUBSCRIPT
+        std::cout << "get_node: looping1 sum=" << sum << " index=" << index << " count=" << p_node->count << std::endl;
+#endif
+
+        sum += p_node->count;
+
+#ifdef DEBUG_SUBSCRIPT
+        std::cout << "get_node: looping2 sum=" << sum << " index=" << index << " count=" << p_node->count << std::endl;
+#endif
+
+        p_node = p_node->next;
+    }
+
+    // handle tail node
+    if (p_node == head_)
+        return p_node;
+    else if (p_node)
         return p_node->prev;
     else
         return tail_;

@@ -100,6 +100,7 @@ class BList
     void inc_count(BNode* p_node);
     void split_node(BNode* p_node, T value, unsigned insertion_index);
     BNode* get_node(const int& index) const;
+    T& get_value(const int& index) const;
     void delete_node(BNode* p_node);
 };
 
