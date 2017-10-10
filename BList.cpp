@@ -666,18 +666,15 @@ T& BList<T, Size>::get_value(const int& index) const {
 #endif
     
     // use the counts to jump
-    auto sum = 0;
-    auto p_node = head_;
     auto i = index;
-    auto prev_i = i;
+    auto p_node = head_;
+    auto sum = p_node->count;
     while (sum <= index) {
 
 #ifdef DEBUG_SUBSCRIPT
         std::cout << "get_value: looping1 sum=" << sum << " prev_i=" << prev_i << " i=" << i << "count=" << p_node->count << std::endl;
 #endif
 
-        sum += p_node->count;
-        prev_i = i;
         i -= p_node->count;
 
 #ifdef DEBUG_SUBSCRIPT
@@ -685,15 +682,13 @@ T& BList<T, Size>::get_value(const int& index) const {
 #endif
 
         p_node = p_node->next;
+        if (p_node)
+            sum += p_node->count;
     }
 
-    // handle tail node
-    if (p_node == head_)
-        return p_node->values[prev_i];
-    else if (p_node)
-        return p_node->prev->values[prev_i];
-    else
-        return tail_->values[prev_i];
+    // TODO this code assumes correct bounded inputs into this function
+    //if (p_node)
+        return p_node->values[i];
 }
 
 template <typename T, unsigned Size>
