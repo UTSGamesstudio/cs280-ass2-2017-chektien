@@ -340,7 +340,7 @@ void test3_2()
     ia[i - low] = i + 1;
 
   Shuffle(ia, range);
-  for (unsigned i = 0; i < size; i++) 
+  
   {
     bl.insert(ia[i]);
     //DumpList(bl, true);

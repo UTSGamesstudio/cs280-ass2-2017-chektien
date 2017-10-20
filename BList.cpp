@@ -315,6 +315,7 @@ void BList<T, Size>::insert(const T& value) throw(BListException) {
         while (p_node) {
             // keep going until hit a spot > value 
             // - use operator< as cannot assume that operator> is implemented
+            // TODO can actually just check p_node->values[p_node->count-1] < value
             while (i<Size && p_node->values[i] < value) {
                 ++i;
             }
